@@ -6,8 +6,8 @@ const
 var
   pluginName, formListPrefix: string;
   newPlugin: IwbFile;
-  newFormListEditorIDs: TStringList;
-  newFormListRecords: TList;
+  slNewFormListEditorIDs: TStringList;
+  lNewFormListRecords: TList;
 
 procedure AssignNPCToFormList(e, formListRecord: IwbMainRecord);
 var
@@ -29,8 +29,8 @@ var
     baseFormList: IwbMainRecord;
 begin
   Result := 0;
-  newFormListEditorIDs := TStringList.Create;
-  newFormListRecords := TList.Create;
+  slNewFormListEditorIDs := TStringList.Create;
+  lNewFormListRecords := TList.Create;
   
   // ユーザーにファイル名を入力してもらう
   if not InputQuery('New Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', pluginName) then
@@ -70,40 +70,40 @@ begin
   AddMessage('Form List Prefix:' + formListPrefix);
   
   // Editor ID のリストを初期化
-  newFormListEditorIDs.Add('All' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('Male' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('Female' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('All' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('Male' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('Female' + EDITORIDSUFFIX);
 
-  newFormListEditorIDs.Add('NordMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('NordFemale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('ImperialMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('ImperialFemale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('BretonMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('BretonFemale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('RedguardMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('RedguardFemale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('HighElfMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('HighElfFemale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('WoodElfMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('WoodElfFemale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('DarkElfMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('DarkElfFemale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('OrcMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('OrcFemale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('KhajiitMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('KhajiitFemale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('ArgonianMale' + EDITORIDSUFFIX);
-  newFormListEditorIDs.Add('ArgonianFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('NordMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('NordFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('ImperialMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('ImperialFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('BretonMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('BretonFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('RedguardMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('RedguardFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('HighElfMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('HighElfFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('WoodElfMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('WoodElfFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('DarkElfMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('DarkElfFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('OrcMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('OrcFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('KhajiitMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('KhajiitFemale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('ArgonianMale' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add('ArgonianFemale' + EDITORIDSUFFIX);
 
   // レコードを直接追加できないので、バニラのFormListレコードをコピー
   baseFormList := RecordByFormID(FileByIndex(0), DRAUGRWEAPONS, True);
   // 各 Editor ID に対して FormList を作成
-  for i := 0 to newFormListEditorIDs.count - 1 do
+  for i := 0 to slNewFormListEditorIDs.count - 1 do
   begin
     newFormList := wbCopyElementToFile(baseFormList, newPlugin, True, True);
     if not Assigned(newFormList) then
     begin
-      AddMessage('Failed to create FormList:' + newFormListEditorIDs[i]);
+      AddMessage('Failed to create FormList:' + slNewFormListEditorIDs[i]);
       Continue;
     end;
     
@@ -114,15 +114,15 @@ begin
       AddMessage('The FormList contents have been cleared.');
     end;
     // FormListのEditor IDを設定
-    SetElementEditValues(newFormList, 'EDID', formListPrefix + newFormListEditorIDs[i]);
+    SetElementEditValues(newFormList, 'EDID', formListPrefix + slNewFormListEditorIDs[i]);
     // FormIDsエレメントを再設定
     entries := Add(newFormList, 'FormIDs', True);
     // 自動追加されるFormIDs #0を削除
     formIDs := ElementByIndex(entries, 0);
     RemoveElement(entries, formIDs);
     // レコード配列に追加したFormListレコードを格納
-    newFormListRecords.Add(newFormList);
-    AddMessage('Created FormList:' + EditorID(ObjectToElement(newFormListRecords[i])));
+    lNewFormListRecords.Add(newFormList);
+    AddMessage('Created FormList:' + EditorID(ObjectToElement(lNewFormListRecords[i])));
   end;
 
 end;
@@ -130,20 +130,29 @@ end;
 function Process(e: IInterface): integer;
 var
   race: IInterface;
-  i, genderFlag, indxAll, indxGender, indxRaceGender: cardinal;
+  i, recordFlag, genderFlag, indxAll, indxGender, indxRaceGender: cardinal;
   NPCGender, raceString: string;
 begin
   Result := 0;
   
+  // NPCレコード以外のレコードはスキップ
   if Signature(e) <> 'NPC_' then begin
     AddMessage('This record is not an NPC record.');
     Exit;
   end;
   
+  AddMessage('Record to operate on:' + EditorID(e));
+  
   // レコードが所属するプラグインをマスター指定する
   AddMasterIfMissing(newPlugin, GetFileName(GetFile(e)));
   
-  AddMessage('Record to operate on:' + EditorID(e));
+  // UseTraitsテンプレートフラグを持つNPCはスキップ
+  recordFlag := GetElementNativeValues(ElementBySignature(e, 'ACBS'), 'Template Flags');
+  if (recordFlag and $01) <> 0 then begin
+    AddMessage('This record uses a template and has the Use Traits flag,');
+    AddMessage('Skip the processing record.');
+    Exit;
+  end;
   
   // 性別の取得
   genderFlag := GetElementNativeValues(e, 'ACBS\Flags');
@@ -163,7 +172,7 @@ begin
       (raceString = 'Imperial') or
       (raceString = 'Breton') or
       (raceString = 'Redguard') or
-      (raceString = 'HighEl') or
+      (raceString = 'HighElf') or
       (raceString = 'WoodElf') or
       (raceString = 'DarkElf') or
       (raceString = 'Orc') or
@@ -173,18 +182,18 @@ begin
      Exit;
   end;
   
-  // EditorIDを基にFormListを取得（ newFormListRecords を先に対応づけ済み）
+  // EditorIDを基にFormListを取得（ lNewFormListRecords を先に対応づけ済み）
   // 共通: "All" は全員に割り当て
-  indxAll := newFormListEditorIDs.IndexOf('All' + EDITORIDSUFFIX);
-  AssignNPCToFormList(e, ObjectToElement(newFormListRecords[indxAll]));
+  indxAll := slNewFormListEditorIDs.IndexOf('All' + EDITORIDSUFFIX);
+  AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxAll]));
 
   // 性別マッチ（Male/Femaleのみ)
-  indxGender := newFormListEditorIDs.IndexOf(NPCGender + EDITORIDSUFFIX);
-  AssignNPCToFormList(e, ObjectToElement(newFormListRecords[indxGender]));
+  indxGender := slNewFormListEditorIDs.IndexOf(NPCGender + EDITORIDSUFFIX);
+  AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxGender]));
 
   // 種族+性別マッチ
-  indxRaceGender := newFormListEditorIDs.IndexOf(raceString + NPCGender + EDITORIDSUFFIX);
-  AssignNPCToFormList(e, ObjectToElement(newFormListRecords[indxRaceGender]));
+  indxRaceGender := slNewFormListEditorIDs.IndexOf(raceString + NPCGender + EDITORIDSUFFIX);
+  AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxRaceGender]));
 
 end;
 
@@ -192,10 +201,10 @@ function Finalize: integer;
 begin
   Result := 0;
   
-  if Assigned(newFormListEditorIDs) then
-    newFormListEditorIDs.Free;
-  if Assigned(newFormListRecords) then
-    newFormListRecords.Free;
+  if Assigned(slNewFormListEditorIDs) then
+    slNewFormListEditorIDs.Free;
+  if Assigned(lNewFormListRecords) then
+    lNewFormListRecords.Free;
 end;
 
 end.
