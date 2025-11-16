@@ -6,7 +6,7 @@ const
 var
   pluginName, formListPrefix: string;
   newPlugin: IwbFile;
-  slNewFormListEditorIDs: TStringList;
+  slNewFormListEditorIDs, slBasicRaces, slExcludeRaces: TStringList;
   lNewFormListRecords: TList;
 
 procedure AssignNPCToFormList(e, formListRecord: IwbMainRecord);
@@ -21,6 +21,19 @@ begin
     AddMessage('Added FormList:' + EditorID(formListRecord));
 end;
 
+function GetRaceFaceGenHeadFlag(raceRecord: IInterface): Boolean;
+var
+  flags: cardinal;
+begin
+  // DATA\Flags を取得
+  flags := GetElementNativeValues(raceRecord, 'DATA\Flags');
+
+  // "FaceGen Head" フラグが ON かどうかを返す
+  if (flags and $02) = 2 then
+    Result := true
+  else
+    Result := false;
+end;
 
 function Initialize: integer;
 var
@@ -30,7 +43,28 @@ var
 begin
   Result := 0;
   slNewFormListEditorIDs := TStringList.Create;
+  slBasicRaces := TStringList.Create;
+  slExcludeRaces := TStringList.Create;
   lNewFormListRecords := TList.Create;
+  
+  slBasicRaces.Add('Nord');
+  slBasicRaces.Add('Imperial');
+  slBasicRaces.Add('Breton');
+  slBasicRaces.Add('Redguard');
+  slBasicRaces.Add('HighElf');
+  slBasicRaces.Add('WoodElf');
+  slBasicRaces.Add('DarkElf');
+  slBasicRaces.Add('Orc');
+  slBasicRaces.Add('Khajiit');
+  slBasicRaces.Add('Argonian');
+  
+  slExcludeRaces.Add('DefaultRace');
+  slExcludeRaces.Add('InvisibleRace');
+  slExcludeRaces.Add('ManekinRace');
+  slExcludeRaces.Add('TestRace');
+  slExcludeRaces.Add('DLC1NordRace');
+  slExcludeRaces.Add('NordRaceAstrid');  // 正常に機能すると思うが見た目がホラーなので
+  slExcludeRaces.Add('DoremoraRace');  // 多分追加しても問題ないがとりあえず除外指定
   
   // ユーザーにファイル名を入力してもらう
   if not InputQuery('New Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', pluginName) then
@@ -132,6 +166,7 @@ var
   race: IInterface;
   i, recordFlag, genderFlag, indxAll, indxGender, indxRaceGender: cardinal;
   NPCGender, raceString: string;
+  raceFaceGenHeadFlag: boolean;
 begin
   Result := 0;
   
@@ -154,18 +189,28 @@ begin
     Exit;
   end;
   
+  // 種族の取得
+  race := LinksTo(ElementByPath(e, 'RNAM'));
+  raceString := EditorID(race);
+  
+  // FaceGenHeadフラグを持たない種族はスキップ
+  if not GetRaceFaceGenHeadFlag(race) then begin
+    AddMessage(raceString + ' doesn''t have FaceGen Head Flag. Skip processing.');
+    Exit;
+  end;
+  
+  //AddMessage(raceString + ' has FaceGen Head Flag. Continue processing.');
+  
+  // 種族名からRace部分を取り除く
+  Delete(raceString, Length(raceString) - 3, 4);
+  //AddMessage('raceString:' + raceString);
+  
   // 性別の取得
   genderFlag := GetElementNativeValues(e, 'ACBS\Flags');
   if (genderFlag and $1) = 0 then
     NPCGender := 'Male'
   else
     NPCGender := 'Female';
-    
-  // 種族の取得
-  race := LinksTo(ElementByPath(e, 'RNAM'));
-  raceString := EditorID(race);
-  Delete(raceString, Length(raceString) - 3, 4);
-  //AddMessage('raceString:' + raceString);
   
   // 基本種族以外は処理をスキップ
   if not ((raceString = 'Nord') or
@@ -203,6 +248,10 @@ begin
   
   if Assigned(slNewFormListEditorIDs) then
     slNewFormListEditorIDs.Free;
+  if Assigned(slBasicRaces) then
+    slBasicRaces.Free;
+  if Assigned(slExcludeRaces) then
+    slExcludeRaces.Free;
   if Assigned(lNewFormListRecords) then
     lNewFormListRecords.Free;
 end;
