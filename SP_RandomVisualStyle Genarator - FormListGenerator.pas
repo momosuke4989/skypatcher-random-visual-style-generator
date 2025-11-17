@@ -104,31 +104,17 @@ begin
   AddMessage('Form List Prefix:' + formListPrefix);
   
   // Editor ID のリストを初期化
-  slNewFormListEditorIDs.Add('All' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('Male' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('Female' + EDITORIDSUFFIX);
+  // 全員および性別
+  slNewFormListEditorIDs.Add(formListPrefix + 'All' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add(formListPrefix + 'Male' + EDITORIDSUFFIX);
+  slNewFormListEditorIDs.Add(formListPrefix + 'Female' + EDITORIDSUFFIX);
 
-  slNewFormListEditorIDs.Add('NordMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('NordFemale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('ImperialMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('ImperialFemale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('BretonMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('BretonFemale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('RedguardMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('RedguardFemale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('HighElfMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('HighElfFemale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('WoodElfMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('WoodElfFemale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('DarkElfMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('DarkElfFemale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('OrcMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('OrcFemale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('KhajiitMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('KhajiitFemale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('ArgonianMale' + EDITORIDSUFFIX);
-  slNewFormListEditorIDs.Add('ArgonianFemale' + EDITORIDSUFFIX);
-
+  // 基本種族
+  for i := 0 to slBasicRaces.Count - 1 do begin
+    slNewFormListEditorIDs.Add(formListPrefix + slBasicRaces[i] + 'Male' + EDITORIDSUFFIX);
+    slNewFormListEditorIDs.Add(formListPrefix + slBasicRaces[i] + 'Female' + EDITORIDSUFFIX);
+  end;
+  
   // レコードを直接追加できないので、バニラのFormListレコードをコピー
   baseFormList := RecordByFormID(FileByIndex(0), DRAUGRWEAPONS, True);
   // 各 Editor ID に対して FormList を作成
@@ -148,7 +134,7 @@ begin
       AddMessage('The FormList contents have been cleared.');
     end;
     // FormListのEditor IDを設定
-    SetElementEditValues(newFormList, 'EDID', formListPrefix + slNewFormListEditorIDs[i]);
+    SetElementEditValues(newFormList, 'EDID', slNewFormListEditorIDs[i]);
     // FormIDsエレメントを再設定
     entries := Add(newFormList, 'FormIDs', True);
     // 自動追加されるFormIDs #0を削除
@@ -163,8 +149,8 @@ end;
 
 function Process(e: IInterface): integer;
 var
-  race: IInterface;
-  i, recordFlag, genderFlag, indxAll, indxGender, indxRaceGender: cardinal;
+  raceRecord: IInterface;
+  i, templateFlag, NPCFlag, indxAll, indxGender, indxRaceGender: cardinal;
   NPCGender, raceString: string;
   raceFaceGenHeadFlag: boolean;
 begin
@@ -181,20 +167,45 @@ begin
   // レコードが所属するプラグインをマスター指定する
   AddMasterIfMissing(newPlugin, GetFileName(GetFile(e)));
   
+  // NPCレコードフラグを取得
+  NPCFlag := GetElementNativeValues(e, 'ACBS\Flags');
+  templateFlag := GetElementNativeValues(ElementBySignature(e, 'ACBS'), 'Template Flags');
+  
   // UseTraitsテンプレートフラグを持つNPCはスキップ
-  recordFlag := GetElementNativeValues(ElementBySignature(e, 'ACBS'), 'Template Flags');
-  if (recordFlag and $01) <> 0 then begin
-    AddMessage('This record uses a template and has the Use Traits flag,');
+  if (templateFlag and $01) <> 0 then begin
+    AddMessage('This record uses a template and has the Use Traits flag.');
     AddMessage('Skip the processing record.');
     Exit;
   end;
   
+  // Editor IDにTemplateを含むNPCはスキップ
+  if Pos('template', LowerCase(EditorID(e))) > 0 then begin
+    AddMessage('This record is a NPC template.');
+    AddMessage('Skip the processing record.');
+    Exit;
+  end;
+  
+  // playerレコードはスキップ
+  if Pos('player', LowerCase(EditorID(e))) > 0 then begin
+    AddMessage('This record is player.');
+    AddMessage('Skip the processing record.');
+    Exit;
+  end;
+  
+  // CharGen Presetはスキップ
+  if (NPCFlag and $4) = 4 then begin
+    AddMessage('This record is a CharGen Prest.');
+    AddMessage('Skip the processing record.');
+    Exit;
+  end;
+  
+  
   // 種族の取得
-  race := LinksTo(ElementByPath(e, 'RNAM'));
-  raceString := EditorID(race);
+  raceRecord := LinksTo(ElementByPath(e, 'RNAM'));
+  raceString := EditorID(raceRecord);
   
   // FaceGenHeadフラグを持たない種族はスキップ
-  if not GetRaceFaceGenHeadFlag(race) then begin
+  if not GetRaceFaceGenHeadFlag(raceRecord) then begin
     AddMessage(raceString + ' doesn''t have FaceGen Head Flag. Skip processing.');
     Exit;
   end;
@@ -205,39 +216,35 @@ begin
   Delete(raceString, Length(raceString) - 3, 4);
   //AddMessage('raceString:' + raceString);
   
-  // 性別の取得
-  genderFlag := GetElementNativeValues(e, 'ACBS\Flags');
-  if (genderFlag and $1) = 0 then
+  // 性別の判定
+  if (NPCFlag and $1) = 0 then
     NPCGender := 'Male'
   else
     NPCGender := 'Female';
   
+  // 除外種族は処理をスキップ
+  if slExcludeRaces.IndexOf(raceString) <> -1 then begin
+    AddMessage('Skip exclude races');
+    Exit;
+  end;
+  
   // 基本種族以外は処理をスキップ
-  if not ((raceString = 'Nord') or
-      (raceString = 'Imperial') or
-      (raceString = 'Breton') or
-      (raceString = 'Redguard') or
-      (raceString = 'HighElf') or
-      (raceString = 'WoodElf') or
-      (raceString = 'DarkElf') or
-      (raceString = 'Orc') or
-      (raceString = 'Khajiit') or
-      (raceString = 'Argonian')) then begin
-     AddMessage('Skip non-basic races');
-     Exit;
+  if slBasicRaces.IndexOf(raceString) = -1 then begin
+    AddMessage('Skip non-basic races');
+    Exit;
   end;
   
   // EditorIDを基にFormListを取得（ lNewFormListRecords を先に対応づけ済み）
   // 共通: "All" は全員に割り当て
-  indxAll := slNewFormListEditorIDs.IndexOf('All' + EDITORIDSUFFIX);
+  indxAll := slNewFormListEditorIDs.IndexOf(formListPrefix + 'All' + EDITORIDSUFFIX);
   AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxAll]));
 
   // 性別マッチ（Male/Femaleのみ)
-  indxGender := slNewFormListEditorIDs.IndexOf(NPCGender + EDITORIDSUFFIX);
+  indxGender := slNewFormListEditorIDs.IndexOf(formListPrefix + NPCGender + EDITORIDSUFFIX);
   AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxGender]));
 
   // 種族+性別マッチ
-  indxRaceGender := slNewFormListEditorIDs.IndexOf(raceString + NPCGender + EDITORIDSUFFIX);
+  indxRaceGender := slNewFormListEditorIDs.IndexOf(formListPrefix + raceString + NPCGender + EDITORIDSUFFIX);
   AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxRaceGender]));
 
 end;
