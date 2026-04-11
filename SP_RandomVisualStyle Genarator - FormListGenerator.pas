@@ -5,7 +5,9 @@ const
 
 var
   pluginName, formListPrefix: string;
+
   newPlugin: IwbFile;
+  baseFormList: IwbMainRecord;
   slNewFormListEditorIDs, slBasicRaces, slExcludeRaces: TStringList;
   lNewFormListRecords: TList;
 
@@ -19,6 +21,39 @@ begin
   SetEditValue(newFormList, IntToHex(GetLoadOrderFormID(e), 8));
   if Assigned(newFormList) then
     AddMessage('Added FormList:' + EditorID(formListRecord));
+end;
+
+function CreateNewFormList(NewFormListEditorID: string): integer;
+var
+  lastIndex: integer;
+    newFormList, entries, formIDs: IwbElement;
+
+begin
+  newFormList := wbCopyElementToFile(baseFormList, newPlugin, True, True);
+  if not Assigned(newFormList) then
+  begin
+    AddMessage('Failed to create FormList:' + NewFormListEditorID);
+    Continue;
+  end;
+
+  // 'FormIDs' サブレコードを取得、エントリがあれば削除
+  entries := ElementByPath(newFormList, 'FormIDs');
+  if Assigned(entries) then begin
+    RemoveElement(newFormList, 'FormIDs');
+    AddMessage('The FormList contents have been cleared.');
+  end;
+  // FormListのEditor IDを設定
+  SetElementEditValues(newFormList, 'EDID', NewFormListEditorID);
+  // FormIDsエレメントを再設定
+  entries := Add(newFormList, 'FormIDs', True);
+  // 自動追加されるFormIDs #0を削除
+  formIDs := ElementByIndex(entries, 0);
+  RemoveElement(entries, formIDs);
+  // レコード配列に追加したFormListレコードを格納
+  lNewFormListRecords.Add(newFormList);
+  lastIndex := lNewFormListRecords.Count - 1;
+  AddMessage('Created FormList:' + EditorID(ObjectToElement(lNewFormListRecords[lastIndex])));
+  Result := lastIndex;
 end;
 
 function GetRaceFaceGenHeadFlag(raceRecord: IInterface): Boolean;
@@ -111,7 +146,6 @@ function Initialize: integer;
 var
     i: integer;
     newFormList, entries, formIDs: IwbElement;
-    baseFormList: IwbMainRecord;
     tempRace: string;
 begin
   Result := 0;
@@ -137,8 +171,8 @@ begin
   slExcludeRaces.Add('TestRace');
   slExcludeRaces.Add('DLC1NordRace');
   slExcludeRaces.Add('NordRaceAstrid');  // 正常に機能すると思うが見た目がホラーなので
-  slExcludeRaces.Add('DoremoraRace');  // 多分追加しても問題ないがとりあえず除外指定
-  slExcludeRaces.Add('DLC2DoremoraRace');
+  slExcludeRaces.Add('DremoraRace');  // 多分追加しても問題ないがとりあえず除外指定
+  slExcludeRaces.Add('DLC2DremoraRace');
 
   // ユーザーにファイル名を入力してもらう
   if not InputQuery('New Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', pluginName) then
@@ -177,50 +211,21 @@ begin
 
   AddMessage('Form List Prefix:' + formListPrefix);
 
+  // レコードを直接追加できないので、バニラのFormListレコードをコピー
+  baseFormList := RecordByFormID(FileByIndex(0), DRAUGRWEAPONS, True);
+
   // Editor ID のリストを初期化
   // 全員および性別
   slNewFormListEditorIDs.Add(formListPrefix + 'All' + EDITORIDSUFFIX);
   slNewFormListEditorIDs.Add(formListPrefix + 'Male' + EDITORIDSUFFIX);
   slNewFormListEditorIDs.Add(formListPrefix + 'Female' + EDITORIDSUFFIX);
 
-  // 基本種族
-  for i := 0 to slBasicRaces.Count - 1 do begin
-    tempRace := slBasicRaces[i];
-    Delete(tempRace, Length(tempRace) - 3, 4);
-    slNewFormListEditorIDs.Add(formListPrefix + tempRace + 'Male' + EDITORIDSUFFIX);
-    slNewFormListEditorIDs.Add(formListPrefix + tempRace + 'Female' + EDITORIDSUFFIX);
-  end;
-
-  // レコードを直接追加できないので、バニラのFormListレコードをコピー
-  baseFormList := RecordByFormID(FileByIndex(0), DRAUGRWEAPONS, True);
   // 各 Editor ID に対して FormList を作成
   for i := 0 to slNewFormListEditorIDs.count - 1 do
   begin
-    newFormList := wbCopyElementToFile(baseFormList, newPlugin, True, True);
-    if not Assigned(newFormList) then
-    begin
-      AddMessage('Failed to create FormList:' + slNewFormListEditorIDs[i]);
-      Continue;
-    end;
-
-    // 'FormIDs' サブレコードを取得、エントリがあれば削除
-    entries := ElementByPath(newFormList, 'FormIDs');
-    if Assigned(entries) then begin
-      RemoveElement(newFormList, 'FormIDs');
-      AddMessage('The FormList contents have been cleared.');
-    end;
-    // FormListのEditor IDを設定
-    SetElementEditValues(newFormList, 'EDID', slNewFormListEditorIDs[i]);
-    // FormIDsエレメントを再設定
-    entries := Add(newFormList, 'FormIDs', True);
-    // 自動追加されるFormIDs #0を削除
-    formIDs := ElementByIndex(entries, 0);
-    RemoveElement(entries, formIDs);
-    // レコード配列に追加したFormListレコードを格納
-    lNewFormListRecords.Add(newFormList);
+    CreateNewFormList(slNewFormListEditorIDs[i]);
     AddMessage('Created FormList:' + EditorID(ObjectToElement(lNewFormListRecords[i])));
   end;
-
 end;
 
 function Process(e: IInterface): integer;
@@ -261,10 +266,6 @@ begin
   else
     NPCGender := 'Female';
 
-  // 種族名からRace部分を取り除く
-  Delete(raceString, Length(raceString) - 3, 4);
-  //AddMessage('raceString:' + raceString);
-
   // EditorIDを基にFormListを取得（ lNewFormListRecords を先に対応づけ済み）
   // 共通: "All" は全員に割り当て
   indxAll := slNewFormListEditorIDs.IndexOf(formListPrefix + 'All' + EDITORIDSUFFIX);
@@ -276,7 +277,13 @@ begin
 
   // 種族+性別マッチ
   indxRaceGender := slNewFormListEditorIDs.IndexOf(formListPrefix + raceString + NPCGender + EDITORIDSUFFIX);
-  //AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxRaceGender]));
+  // FormListが存在しない場合は新規作成してから割り当て
+  if indxRaceGender = -1 then
+  begin
+    indxRaceGender := CreateNewFormList(formListPrefix + raceString + NPCGender + EDITORIDSUFFIX);
+    slNewFormListEditorIDs.Add(formListPrefix + raceString + NPCGender + EDITORIDSUFFIX);
+  end;
+  AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxRaceGender]));
 
 end;
 
