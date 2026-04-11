@@ -35,11 +35,84 @@ begin
     Result := false;
 end;
 
+function ShouldExcludeNPC(e: IInterface): Boolean;
+var
+  raceRecord: IInterface;
+  raceString: string;
+  NPCFlag, templateFlag: cardinal;
+begin
+  Result := false;
+
+  // 種族の取得
+  raceRecord := LinksTo(ElementByPath(e, 'RNAM'));
+  raceString := EditorID(raceRecord);
+
+  // 基本種族以外は処理をスキップ
+  {if slBasicRaces.IndexOf(raceString) = -1 then begin
+    AddMessage('Skip non-basic races');
+    Exit;
+  end;
+}
+
+  // 除外種族リストに含まれる種族かどうかを判定
+  if slExcludeRaces.IndexOf(raceString) <> -1 then begin
+    AddMessage('This record is in the exclude races list.');
+    Result := true;
+    Exit;
+  end;
+
+    // 種族名にchildを含むNPCはスキップ
+  if Pos('child', LowerCase(raceString(e))) > 0 then begin
+    AddMessage('This record is a child NPC.');
+    Result := true;
+    Exit;
+  end;
+
+  // playerレコードはスキップ
+  if CompareText(EditorID(e), 'player') = 0 then begin
+    AddMessage('This record is player.');
+    Result := true;
+    Exit;
+  end;
+
+  // Editor IDにTemplateを含むNPCはスキップ
+  if Pos('template', LowerCase(EditorID(e))) > 0 then begin
+    AddMessage('This record is a NPC template.');
+    Result := true;
+    Exit;
+  end;
+
+  NPCFlag := GetElementNativeValues(e, 'ACBS\Flags');
+  // CharGen Presetはスキップ
+  if (NPCFlag and $4) = 4 then begin
+    AddMessage('This record is a CharGen Prest.');
+    Result := true;
+    Exit;
+  end;
+
+  // FaceGenHeadフラグを持たない種族はスキップ
+  if not GetRaceFaceGenHeadFlag(raceRecord) then begin
+    AddMessage(raceString + ' doesn''t have FaceGen Head Flag.');
+    Result := true;
+    Exit;
+  end;
+
+  templateFlag := GetElementNativeValues(ElementBySignature(e, 'ACBS'), 'Template Flags');
+  // UseTraitsテンプレートフラグを持つNPCはスキップ
+  if (templateFlag and $01) <> 0 then begin
+    AddMessage('This record uses a template and has the Use Traits flag.');
+    Result := true;
+    Exit;
+  end;
+
+end;
+
 function Initialize: integer;
 var
     i: integer;
     newFormList, entries, formIDs: IwbElement;
     baseFormList: IwbMainRecord;
+    tempRace: string;
 begin
   Result := 0;
   slNewFormListEditorIDs := TStringList.Create;
@@ -47,24 +120,25 @@ begin
   slExcludeRaces := TStringList.Create;
   lNewFormListRecords := TList.Create;
 
-  slBasicRaces.Add('Nord');
-  slBasicRaces.Add('Imperial');
-  slBasicRaces.Add('Breton');
-  slBasicRaces.Add('Redguard');
-  slBasicRaces.Add('HighElf');
-  slBasicRaces.Add('WoodElf');
-  slBasicRaces.Add('DarkElf');
-  slBasicRaces.Add('Orc');
-  slBasicRaces.Add('Khajiit');
-  slBasicRaces.Add('Argonian');
+  slBasicRaces.Add('NordRace');
+  slBasicRaces.Add('ImperialRace');
+  slBasicRaces.Add('BretonRace');
+  slBasicRaces.Add('RedguardRace');
+  slBasicRaces.Add('HighElfRace');
+  slBasicRaces.Add('WoodElfRace');
+  slBasicRaces.Add('DarkElfRace');
+  slBasicRaces.Add('OrcRace');
+  slBasicRaces.Add('KhajiitRace');
+  slBasicRaces.Add('ArgonianRace');
 
   slExcludeRaces.Add('DefaultRace');
   slExcludeRaces.Add('InvisibleRace');
-  slExcludeRaces.Add('ManekinRace');
+  slExcludeRaces.Add('ManakinRace');
   slExcludeRaces.Add('TestRace');
   slExcludeRaces.Add('DLC1NordRace');
   slExcludeRaces.Add('NordRaceAstrid');  // 正常に機能すると思うが見た目がホラーなので
   slExcludeRaces.Add('DoremoraRace');  // 多分追加しても問題ないがとりあえず除外指定
+  slExcludeRaces.Add('DLC2DoremoraRace');
 
   // ユーザーにファイル名を入力してもらう
   if not InputQuery('New Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', pluginName) then
@@ -111,8 +185,10 @@ begin
 
   // 基本種族
   for i := 0 to slBasicRaces.Count - 1 do begin
-    slNewFormListEditorIDs.Add(formListPrefix + slBasicRaces[i] + 'Male' + EDITORIDSUFFIX);
-    slNewFormListEditorIDs.Add(formListPrefix + slBasicRaces[i] + 'Female' + EDITORIDSUFFIX);
+    tempRace := slBasicRaces[i];
+    Delete(tempRace, Length(tempRace) - 3, 4);
+    slNewFormListEditorIDs.Add(formListPrefix + tempRace + 'Male' + EDITORIDSUFFIX);
+    slNewFormListEditorIDs.Add(formListPrefix + tempRace + 'Female' + EDITORIDSUFFIX);
   end;
 
   // レコードを直接追加できないので、バニラのFormListレコードをコピー
@@ -167,61 +243,17 @@ begin
   // レコードが所属するプラグインをマスター指定する
   AddMasterIfMissing(newPlugin, GetFileName(GetFile(e)));
 
+  if ShouldExcludeNPC(e) then begin
+    AddMessage('This NPC record is excluded from RVSG Form List.');
+    Exit;
+  end;
+
   // NPCレコードフラグを取得
   NPCFlag := GetElementNativeValues(e, 'ACBS\Flags');
-  templateFlag := GetElementNativeValues(ElementBySignature(e, 'ACBS'), 'Template Flags');
-
-  // UseTraitsテンプレートフラグを持つNPCはスキップ
-  if (templateFlag and $01) <> 0 then begin
-    AddMessage('This record uses a template and has the Use Traits flag.');
-    AddMessage('Skip the processing record.');
-    Exit;
-  end;
-
-  // Editor IDにTemplateを含むNPCはスキップ
-  if Pos('template', LowerCase(EditorID(e))) > 0 then begin
-    AddMessage('This record is a NPC template.');
-    AddMessage('Skip the processing record.');
-    Exit;
-  end;
-
-  // Editor IDにchildを含むNPCはスキップ
-  if Pos('child', LowerCase(EditorID(e))) > 0 then begin
-    AddMessage('This record is a child NPC.');
-    AddMessage('Skip the processing record.');
-    Exit;
-  end;
-
-  // playerレコードはスキップ
-  if Pos('player', LowerCase(EditorID(e))) > 0 then begin
-    AddMessage('This record is player.');
-    AddMessage('Skip the processing record.');
-    Exit;
-  end;
-
-  // CharGen Presetはスキップ
-  if (NPCFlag and $4) = 4 then begin
-    AddMessage('This record is a CharGen Prest.');
-    AddMessage('Skip the processing record.');
-    Exit;
-  end;
-
 
   // 種族の取得
   raceRecord := LinksTo(ElementByPath(e, 'RNAM'));
   raceString := EditorID(raceRecord);
-
-  // FaceGenHeadフラグを持たない種族はスキップ
-  if not GetRaceFaceGenHeadFlag(raceRecord) then begin
-    AddMessage(raceString + ' doesn''t have FaceGen Head Flag. Skip processing.');
-    Exit;
-  end;
-
-  //AddMessage(raceString + ' has FaceGen Head Flag. Continue processing.');
-
-  // 種族名からRace部分を取り除く
-  Delete(raceString, Length(raceString) - 3, 4);
-  //AddMessage('raceString:' + raceString);
 
   // 性別の判定
   if (NPCFlag and $1) = 0 then
@@ -229,17 +261,9 @@ begin
   else
     NPCGender := 'Female';
 
-  // 除外種族は処理をスキップ
-  if slExcludeRaces.IndexOf(raceString) <> -1 then begin
-    AddMessage('Skip exclude races');
-    Exit;
-  end;
-
-  // 基本種族以外は処理をスキップ
-  if slBasicRaces.IndexOf(raceString) = -1 then begin
-    AddMessage('Skip non-basic races');
-    Exit;
-  end;
+  // 種族名からRace部分を取り除く
+  Delete(raceString, Length(raceString) - 3, 4);
+  //AddMessage('raceString:' + raceString);
 
   // EditorIDを基にFormListを取得（ lNewFormListRecords を先に対応づけ済み）
   // 共通: "All" は全員に割り当て
@@ -252,7 +276,7 @@ begin
 
   // 種族+性別マッチ
   indxRaceGender := slNewFormListEditorIDs.IndexOf(formListPrefix + raceString + NPCGender + EDITORIDSUFFIX);
-  AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxRaceGender]));
+  //AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxRaceGender]));
 
 end;
 
