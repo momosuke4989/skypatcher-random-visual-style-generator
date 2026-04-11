@@ -5,6 +5,7 @@ const
 
 var
   pluginName, formListPrefix: string;
+  basicRacesOnly: boolean;
 
   newPlugin: IwbFile;
   baseFormList: IwbMainRecord;
@@ -83,11 +84,12 @@ begin
   raceString := EditorID(raceRecord);
 
   // 基本種族以外は処理をスキップ
-  {if slBasicRaces.IndexOf(raceString) = -1 then begin
+  if basicRacesOnly and slBasicRaces.IndexOf(raceString) = -1 then begin
     AddMessage('Skip non-basic races');
+    Result := true;
     Exit;
   end;
-}
+
 
   // 除外種族リストに含まれる種族かどうかを判定
   if slExcludeRaces.IndexOf(raceString) <> -1 then begin
@@ -173,6 +175,18 @@ begin
   slExcludeRaces.Add('NordRaceAstrid');  // 正常に機能すると思うが見た目がホラーなので
   slExcludeRaces.Add('DremoraRace');  // 多分追加しても問題ないがとりあえず除外指定
   slExcludeRaces.Add('DLC2DremoraRace');
+
+  if MessageDlg(
+    'Do you want to register races other than the basic races in the Form List?',
+    mtConfirmation, [mbYes, mbNo], 0
+    ) = mrYes then begin
+    basicRacesOnly := false;
+    AddMessage('Races other than the basic races will be registered in the Form List.');
+  end
+  else begin
+    basicRacesOnly := true;
+    AddMessage('Only basic races will be registered in the Form List.');
+  end;
 
   // ユーザーにファイル名を入力してもらう
   if not InputQuery('New Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', pluginName) then
