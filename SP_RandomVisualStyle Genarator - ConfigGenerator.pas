@@ -32,19 +32,19 @@ begin
 
     slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=female:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_Female_RVSG~' + APPLYCHANCE);
 
+    // 種族と性別で制限する場合は、種族名+性別のFormListを作成して割り当てる
     slExportString.Add(#13#10);
-    slExportString.Add(';Restrict to BasicRace and Gender');
+    slExportString.Add(';Restrict to Basic Race and Gender');
     for i := 0 to slBasicRaces.Count - 1 do
     begin
-      // 種族と性別で制限する場合は、種族名+性別のFormListを作成して割り当てる
       slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:restrictToRace=' + slBasicRaces[i] + ':' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'Male_RVSG~' + APPLYCHANCE);
 
       slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender    =female:restrictToRace=' + slBasicRaces[i] + ':' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'Female_RVSG~' + APPLYCHANCE);
     end;
 
-      slExportString.Add(#13#10);
-      // 吸血鬼種族も追加
-      slExportString.Add(';Vampire Race and Gender');
+    // 吸血鬼種族も追加
+    slExportString.Add(#13#10);
+    slExportString.Add(';Basic Vampire Race and Gender');
     for i := 0 to slBasicRaces.Count - 1 do
     begin
       slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:restrictToRace=' + slBasicRaces[i] + 'Vampire:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'VampireMale_RVSG~' + APPLYCHANCE);
