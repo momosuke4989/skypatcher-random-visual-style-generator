@@ -162,6 +162,10 @@ begin
 
   formListEditorID := '';
 
+  // レコードヘッダーはスキップ
+  if Signature(e) = 'TES4' then
+    Exit;
+
   // FormListレコードでなければスキップ
   if Signature(e) <> 'FLST' then begin
     AddMessage(GetElementEditValues(e, 'EDID') + ' is not Form List record.');
@@ -240,6 +244,8 @@ begin
   end;
   if Assigned(slExport) then
     slExport.Free;
+  if Assigned(slBasicRaces) then
+    slBasicRaces.Free;
   if Assigned(slRVSFactionName) then
     slRVSFactionName.Free;
 
