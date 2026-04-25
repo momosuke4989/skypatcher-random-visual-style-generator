@@ -50,7 +50,7 @@ begin
   begin
     slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:restrictToRace=' + slBasicRaces[i] + ':' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'Male_RVSG~' + APPLYCHANCE);
 
-    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender    =female:restrictToRace=' + slBasicRaces[i] + ':' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'Female_RVSG~' + APPLYCHANCE);
+    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=female:restrictToRace=' + slBasicRaces[i] + ':' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'Female_RVSG~' + APPLYCHANCE);
   end;
 
   // 吸血鬼種族も追加
@@ -60,7 +60,7 @@ begin
   begin
     slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:restrictToRace=' + slBasicRaces[i] + 'Vampire:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'VampireMale_RVSG~' + APPLYCHANCE);
 
-    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender    =female:restrictToRace=' + slBasicRaces[i] + 'Vampire:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'VampireFemale_RVSG~' + APPLYCHANCE);
+    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=female:restrictToRace=' + slBasicRaces[i] + 'Vampire:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'VampireFemale_RVSG~' + APPLYCHANCE);
   end;
 
 
