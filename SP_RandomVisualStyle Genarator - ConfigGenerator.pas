@@ -10,14 +10,14 @@ var
   slBasicRaces: TStringList;
   slRVSFactionName: TStringList;
   RVSGFileName: string;
-  addRVS: boolean;
+  addRVS, restrictToRaces: boolean;
 
   // プロセス処理で設定する変数
   formListPrefix: string;
 
 procedure AssignRVSExportString(const slRVSFactionName, prefix: string; var slExportString: TStringList);
 var
-  RVSOperation: string;
+  RVSOperation, disableGender, disableRaceGender: string;
   i: Cardinal;
 begin
 
@@ -26,31 +26,42 @@ begin
   else
     RVSOperation := 'set';
 
-    slExportString.Add(';' + slRVSFactionName);
-    slExportString.Add(';Restrict to Gender Only');
-    slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_Male_RVSG~' + APPLYCHANCE);
+  if restrictToRaces = true then
+  begin
+    disableGender := ';';
+    disableRaceGender := '';
+  end
+  else begin
+    disableGender := '';
+    disableRaceGender := ';';
+  end;
 
-    slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=female:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_Female_RVSG~' + APPLYCHANCE);
+  slExportString.Add(';' + slRVSFactionName);
+  // 性別のみで制限する場合は、性別ごとのFormListを割り当てる
+  slExportString.Add(';Restrict to Gender Only');
+  slExportString.Add(disableGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_Male_RVSG~' + APPLYCHANCE);
 
-    // 種族と性別で制限する場合は、種族名+性別のFormListを作成して割り当てる
-    slExportString.Add(#13#10);
-    slExportString.Add(';Restrict to Basic Race and Gender');
-    for i := 0 to slBasicRaces.Count - 1 do
-    begin
-      slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:restrictToRace=' + slBasicRaces[i] + ':' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'Male_RVSG~' + APPLYCHANCE);
+  slExportString.Add(disableGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=female:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_Female_RVSG~' + APPLYCHANCE);
 
-      slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender    =female:restrictToRace=' + slBasicRaces[i] + ':' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'Female_RVSG~' + APPLYCHANCE);
-    end;
+  // 種族と性別で制限する場合は、種族名+性別のFormListを割り当てる
+  slExportString.Add(#13#10);
+  slExportString.Add(';Restrict to Basic Race and Gender');
+  for i := 0 to slBasicRaces.Count - 1 do
+  begin
+    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:restrictToRace=' + slBasicRaces[i] + ':' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'Male_RVSG~' + APPLYCHANCE);
 
-    // 吸血鬼種族も追加
-    slExportString.Add(#13#10);
-    slExportString.Add(';Basic Vampire Race and Gender');
-    for i := 0 to slBasicRaces.Count - 1 do
-    begin
-      slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:restrictToRace=' + slBasicRaces[i] + 'Vampire:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'VampireMale_RVSG~' + APPLYCHANCE);
+    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender    =female:restrictToRace=' + slBasicRaces[i] + ':' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'Female_RVSG~' + APPLYCHANCE);
+  end;
 
-      slExportString.Add('filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender    =female:restrictToRace=' + slBasicRaces[i] + 'Vampire:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'VampireFemale_RVSG~' + APPLYCHANCE);
-    end;
+  // 吸血鬼種族も追加
+  slExportString.Add(#13#10);
+  slExportString.Add(';Basic Vampire Race and Gender');
+  for i := 0 to slBasicRaces.Count - 1 do
+  begin
+    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:restrictToRace=' + slBasicRaces[i] + 'Vampire:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'VampireMale_RVSG~' + APPLYCHANCE);
+
+    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender    =female:restrictToRace=' + slBasicRaces[i] + 'Vampire:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'VampireFemale_RVSG~' + APPLYCHANCE);
+  end;
 
 
 end;
@@ -101,6 +112,9 @@ begin
 
   checkBoxCaption := 'Target faction select';
 
+  addRVS := false;
+  restrictToRaces := false;
+
   if MessageDlg(
     'Select which Random Visual Style Operation:' + #13#10 +
     'Yes = Add (Recommend)' + #13#10 +
@@ -108,6 +122,14 @@ begin
     mtConfirmation, [mbYes, mbNo], 0
     ) = mrYes then
     addRVS := true;
+
+  if MessageDlg(
+    'Select restriction type:' + #13#10 +
+    'Yes = Restrict to Basic Races and Gender' + #13#10 +
+    'No = Gender Only Restriction',
+    mtConfirmation, [mbYes, mbNo], 0
+    ) = mrYes then
+    restrictToRaces := true;
 
   // 各オプションの設定
   try
