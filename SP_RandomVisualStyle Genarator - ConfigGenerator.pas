@@ -194,7 +194,7 @@ var
   slExport: TStringList;
 
   dlgSave: TSaveDialog;
-  exportFileName, saveDir, filterString, fileExtension: string;
+  exportFileName, saveDir, factionSaveDir, filterString, fileExtension: string;
   RVSOperation: string;
   i: Cardinal;
 begin
@@ -226,11 +226,17 @@ begin
     // ファイル保存
     dlgSave.Options := dlgSave.Options + [ofOverwritePrompt];
     dlgSave.Filter := filterString;
-    dlgSave.InitialDir := saveDir;
+
     for i := 0 to slRVSFactionName.Count -1 do begin
       if GetBoolSLValue(slRVSFactionName.ValueFromIndex[i]) then begin
         slExport.Clear;
         AssignRVSExportString(slRVSFactionName.Names[i], formListPrefix, slExport);
+
+        factionSaveDir := saveDir + 'factions\' + slRVSFactionName.Names[i] + '\';
+        if not DirectoryExists(factionSaveDir) then
+          ForceDirectories(factionSaveDir);
+
+        dlgSave.InitialDir := factionSaveDir;
         dlgSave.FileName := RVSOperation + RVSGFileName + ' - ' + slRVSFactionName.Names[i] + fileExtension;
         if dlgSave.Execute then begin
           exportFileName := dlgSave.FileName;
