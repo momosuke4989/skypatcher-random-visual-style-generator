@@ -207,9 +207,7 @@ begin
 
   slExport         := TStringList.Create;
 
-  if addRVS = true then
-    RVSOperation := 'ADD - '
-  else
+  if not addRVS then
     RVSOperation := 'SET - ';
 
   // 出力設定
