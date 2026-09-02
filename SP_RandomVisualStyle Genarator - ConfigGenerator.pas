@@ -137,7 +137,7 @@ begin
     begin
       AddMessage('You selected:');
       for i := 0 to slRVSFactionName.Count - 1 do begin
-        AddMessage(slRVSFactionName.Names[i] + ' - ' + slRVSFactionName.ValueFromIndex[i]);
+        AddMessage('  ' + slRVSFactionName.Names[i] + ' - ' + slRVSFactionName.ValueFromIndex[i]);
       end;
     end
     else begin
@@ -193,8 +193,7 @@ var
   // 設定ファイル出力用変数
   slExport: TStringList;
 
-  dlgSave: TSaveDialog;
-  exportFileName, saveDir, factionSaveDir, filterString, fileExtension: string;
+  exportFileName, exportFilePath, saveDir, factionPath, factionSaveDir, fileExtension: string;
   RVSOperation: string;
   i: Cardinal;
 begin
@@ -212,40 +211,38 @@ begin
 
   // 出力設定
   saveDir := DataPath + 'SkyPatcher Random Visual Style Generator\SKSE\Plugins\SkyPatcher\npc\SkyPatcher Random Visual Style Generator\';
-  filterString := 'Ini (*.ini)|*.ini';
   fileExtension := '.ini';
 
   // ディレクトリ作成
   if not DirectoryExists(saveDir) then
     ForceDirectories(saveDir);
 
-  dlgSave := TSaveDialog.Create(nil);
-  try
-    // ファイル保存
-    dlgSave.Options := dlgSave.Options + [ofOverwritePrompt];
-    dlgSave.Filter := filterString;
+  // ファイル保存
+  AddMessage('====================================================================================================');
+  AddMessage('Saving config files under: Data\SkyPatcher Random Visual Style Generator\SKSE\Plugins\SkyPatcher\npc\SkyPatcher Random Visual Style Generator\factions\');
+  AddMessage('====================================================================================================');
 
-    for i := 0 to slRVSFactionName.Count -1 do begin
-      if GetBoolSLValue(slRVSFactionName.ValueFromIndex[i]) then begin
-        slExport.Clear;
-        AssignRVSExportString(slRVSFactionName.Names[i], formListPrefix, slExport);
+  for i := 0 to slRVSFactionName.Count -1 do begin
+    if GetBoolSLValue(slRVSFactionName.ValueFromIndex[i]) then begin
+      slExport.Clear;
+      AssignRVSExportString(slRVSFactionName.Names[i], formListPrefix, slExport);
 
-        factionSaveDir := saveDir + 'factions\' + slRVSFactionName.Names[i] + '\';
-        if not DirectoryExists(factionSaveDir) then
-          ForceDirectories(factionSaveDir);
+      factionPath := 'factions\' + slRVSFactionName.Names[i] + '\';
+      factionSaveDir := saveDir + factionPath;
+      if not DirectoryExists(factionSaveDir) then
+        ForceDirectories(factionSaveDir);
 
-        dlgSave.InitialDir := factionSaveDir;
-        dlgSave.FileName := RVSOperation + RVSGFileName + ' - ' + slRVSFactionName.Names[i] + fileExtension;
-        if dlgSave.Execute then begin
-          exportFileName := dlgSave.FileName;
-          AddMessage('Saving ' + exportFileName);
-          slExport.SaveToFile(exportFileName);
-        end;
-      end;
+      exportFileName := RVSOperation + RVSGFileName + ' - ' + slRVSFactionName.Names[i] + fileExtension;
+      exportFilePath := factionSaveDir + exportFileName;
+
+      AddMessage(Format('  [%s] %s', [slRVSFactionName.Names[i], exportFileName]));
+      slExport.SaveToFile(exportFilePath);
     end;
-  finally
-    dlgSave.Free;
   end;
+
+  AddMessage('====================================================================================================');
+  AddMessage('Done.');
+
   if Assigned(slExport) then
     slExport.Free;
   if Assigned(slBasicRaces) then
