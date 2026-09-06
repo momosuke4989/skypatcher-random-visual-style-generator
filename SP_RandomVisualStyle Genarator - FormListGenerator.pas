@@ -3,6 +3,9 @@ const
   DRAUGRWEAPONS = $00000D14; // FomrID Listコピー参照用
   EDITORIDSUFFIX = '_RVSG';
 
+  UNIQUE_ONLY = False; // ユニークフラグを持つNPCのみをFormListに追加する場合はTrue、すべてのNPCを追加する場合はFalse
+  NON_UNIQUE_ONLY = False; // ユニークフラグを持たないNPCのみをFormListに追加する場合はTrue、すべてのNPCを追加する場合はFalse
+
 var
   pluginName, formListPrefix: string;
   basicRacesOnly: boolean;
@@ -269,6 +272,17 @@ begin
 
   // NPCレコードフラグを取得
   NPCFlag := GetElementNativeValues(e, 'ACBS\Flags');
+
+  if UNIQUE_ONLY and ((NPCFlag and $20) = 0) then begin
+    AddMessage('This record is not unique, so it is excluded from the Form List.');
+    Exit;
+  end;
+
+  if NON_UNIQUE_ONLY and ((NPCFlag and $20) <> 0) then begin
+    AddMessage('This record is unique, so it is excluded from the Form List.');
+    Exit;
+  end;
+
 
   // 種族の取得
   raceRecord := LinksTo(ElementByPath(e, 'RNAM'));
