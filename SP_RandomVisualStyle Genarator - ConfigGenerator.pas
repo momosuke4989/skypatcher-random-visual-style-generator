@@ -3,7 +3,7 @@ unit userscripts;
 uses 'NPC Replacer Converter - Shared\NPCRC_CommonUtils';
 
 const
-  APPLYCHANCE = '99';
+  APPLYCHANCE = '100';
 
 var
   // イニシャル処理で設定・使用する変数
