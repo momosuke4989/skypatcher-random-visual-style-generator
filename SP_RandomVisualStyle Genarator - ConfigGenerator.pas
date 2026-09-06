@@ -5,17 +5,34 @@ uses 'NPC Replacer Converter - Shared\NPCRC_CommonUtils';
 const
   APPLYCHANCE = '100';
 
+  WORLD_ENCOUNTER_KEYWORD   = 'WorldEncounter';
+  WORLD_ENCOUNTER_EDITORIDS = 'WEThief, WEAssassin, WEAdventurer';
+
 var
-  // イニシャル処理で設定・使用する変数
+  // イニシャライズ処理で設定・使用する変数
   slBasicRaces: TStringList;
   slRVSFactionName: TStringList;
-  RVSGFileName: string;
-  addRVS, restrictToRaces: boolean;
+  RVSGFileName, targetPluginName: string;
+  addRVS, restrictToRaces, isModTarget: boolean;
 
   // プロセス処理で設定する変数
   formListPrefix: string;
 
-procedure AssignRVSExportString(const slRVSFactionName, prefix: string; var slExportString: TStringList);
+// isModTargetの選択結果と、targetの中身に応じて適切なSkyPatcherフィルタ句を生成する
+// - isModTarget = True の場合: filterByModName=<値>
+// - isModTarget = False かつ target = 'WorldEncounter' の場合: filterByEditorIdContains=<固定のEditorIDリスト>
+// - それ以外(isModTarget = False): 従来通り filterByEditorIdContains=Enc, <値>
+function GenerateTargetFilterString(const target: string; isModTarget: boolean): string;
+begin
+  if isModTarget then
+    Result := 'filterByModNames=' + target
+  else if SameText(target, WORLD_ENCOUNTER_KEYWORD) then
+    Result := 'filterByEditorIdContainsOr=' + WORLD_ENCOUNTER_EDITORIDS
+  else
+    Result := 'filterByEditorIdContains=Enc, ' + target;
+end;
+
+procedure AssignRVSExportString(const slRVSFactionName, prefix, filterString: string; var slExportString: TStringList);
 var
   RVSOperation, disableGender, disableRaceGender: string;
   i: Cardinal;
@@ -39,18 +56,18 @@ begin
   slExportString.Add(';' + slRVSFactionName);
   // 性別のみで制限する場合は、性別ごとのFormListを割り当てる
   slExportString.Add(';Restrict to Gender Only');
-  slExportString.Add(disableGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=male:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_Male_RVSG~' + APPLYCHANCE);
+  slExportString.Add(disableGender + filterString + ':rvsRestrictToTraits=true:restrictToGender=male:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_Male_RVSG~' + APPLYCHANCE);
 
-  slExportString.Add(disableGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToGender=female:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_Female_RVSG~' + APPLYCHANCE);
+  slExportString.Add(disableGender + filterString + ':rvsRestrictToTraits=true:restrictToGender=female:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_Female_RVSG~' + APPLYCHANCE);
 
   // 種族と性別で制限する場合は、種族名+性別のFormListを割り当てる
   slExportString.Add(#13#10);
   slExportString.Add(';Restrict to Basic Race and Gender');
   for i := 0 to slBasicRaces.Count - 1 do
   begin
-    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToRaces=' + slBasicRaces[i] + ':restrictToGender=male:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'Male_RVSG~' + APPLYCHANCE);
+    slExportString.Add(disableRaceGender + filterString + ':rvsRestrictToTraits=true:restrictToRaces=' + slBasicRaces[i] + ':restrictToGender=male:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'Male_RVSG~' + APPLYCHANCE);
 
-    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToRaces=' + slBasicRaces[i] + ':restrictToGender=female:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'Female_RVSG~' + APPLYCHANCE);
+    slExportString.Add(disableRaceGender + filterString + ':rvsRestrictToTraits=true:restrictToRaces=' + slBasicRaces[i] + ':restrictToGender=female:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'Female_RVSG~' + APPLYCHANCE);
   end;
 
   // 吸血鬼種族も追加
@@ -58,9 +75,9 @@ begin
   slExportString.Add(';Basic Vampire Race and Gender');
   for i := 0 to slBasicRaces.Count - 1 do
   begin
-    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToRaces=' + slBasicRaces[i] + 'Vampire:restrictToGender=male:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'VampireMale_RVSG~' + APPLYCHANCE);
+    slExportString.Add(disableRaceGender + filterString + ':rvsRestrictToTraits=true:restrictToRaces=' + slBasicRaces[i] + 'Vampire:restrictToGender=male:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces[i] + 'VampireMale_RVSG~' + APPLYCHANCE);
 
-    slExportString.Add(disableRaceGender + 'filterByEditorIdContains=Enc, ' + slRVSFactionName + ':rvsRestrictToTraits=true:restrictToRaces=' + slBasicRaces[i] + 'Vampire:restrictToGender=female:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'VampireFemale_RVSG~' + APPLYCHANCE);
+    slExportString.Add(disableRaceGender + filterString + ':rvsRestrictToTraits=true:restrictToRaces=' + slBasicRaces[i] + 'Vampire:restrictToGender=female:' + RVSOperation + 'RandomVisualStyle=' + prefix + '_' + slBasicRaces  [i] + 'VampireFemale_RVSG~' + APPLYCHANCE);
   end;
 
 
@@ -109,11 +126,13 @@ begin
   slRVSFactionName.Add('Penitus=false');
   slRVSFactionName.Add('Afflicted=false');
   slRVSFactionName.Add('Cultist=false');
+  slRVSFactionName.Add('WorldEncounter=false');
 
   checkBoxCaption := 'Target faction select';
 
   addRVS := false;
   restrictToRaces := false;
+  isModTarget := false;
 
   if MessageDlg(
     'Select which Random Visual Style Operation:' + #13#10 +
@@ -131,23 +150,41 @@ begin
     ) = mrYes then
     restrictToRaces := true;
 
+  if MessageDlg(
+    'What should this filter target?' + #13#10 +
+    'Yes = A specific mod (.esp/.esm/.esl)' + #13#10 +
+    'No = A faction (Editor ID keyword)',
+    mtConfirmation, [mbYes, mbNo], 0
+    ) = mrYes then
+  isModTarget := true;
+
   // 各オプションの設定
-  try
-    if ShowCheckboxForm(slRVSFactionName, disableOpts, checkBoxCaption) then
-    begin
-      AddMessage('You selected:');
-      for i := 0 to slRVSFactionName.Count - 1 do begin
-        AddMessage('  ' + slRVSFactionName.Names[i] + ' - ' + slRVSFactionName.ValueFromIndex[i]);
+  if not isModTarget then begin
+    try
+      if ShowCheckboxForm(slRVSFactionName, disableOpts, checkBoxCaption) then
+      begin
+        AddMessage('You selected:');
+        for i := 0 to slRVSFactionName.Count - 1 do begin
+          AddMessage('  ' + slRVSFactionName.Names[i] + ' - ' + slRVSFactionName.ValueFromIndex[i]);
+        end;
+      end
+      else begin
+        AddMessage('Selection was canceled.');
+        Result := -1;
+        Exit;
       end;
-    end
-    else begin
-      AddMessage('Selection was canceled.');
-      Result := -1;
+
+    finally
+      disableOpts.Free;
+    end;
+  end
+  else begin
+    if not InputQuery('Target Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', targetPluginName) then
+    begin
+      AddMessage('Target plugin name entry was canceled.');
+      Result := 1;
       Exit;
     end;
-
-  finally
-    disableOpts.Free;
   end;
 
 end;
@@ -193,7 +230,7 @@ var
   // 設定ファイル出力用変数
   slExport: TStringList;
 
-  exportFileName, exportFilePath, saveDir, factionPath, factionSaveDir, fileExtension: string;
+  filterString, exportFileName, exportFilePath, saveDir, saveDirChild, fileSaveDir, fileExtension: string;
   RVSOperation: string;
   i: Cardinal;
 begin
@@ -218,27 +255,51 @@ begin
     ForceDirectories(saveDir);
 
   // ファイル保存
-  AddMessage('====================================================================================================');
-  AddMessage('Saving config files under: Data\SkyPatcher Random Visual Style Generator\SKSE\Plugins\SkyPatcher\npc\SkyPatcher Random Visual Style Generator\factions\');
-  AddMessage('====================================================================================================');
+  if isModTarget then begin
+    AddMessage('====================================================================================================');
+    AddMessage('Saving config file under: Data\SkyPatcher Random Visual Style Generator\SKSE\Plugins\SkyPatcher\npc\SkyPatcher Random Visual Style Generator\Mods\');
+    AddMessage('====================================================================================================');
 
-  for i := 0 to slRVSFactionName.Count -1 do begin
-    if GetBoolSLValue(slRVSFactionName.ValueFromIndex[i]) then begin
-      slExport.Clear;
-      AssignRVSExportString(slRVSFactionName.Names[i], formListPrefix, slExport);
+    filterString := GenerateTargetFilterString(targetPluginName, isModTarget);
+    AssignRVSExportString(RVSGFileName, formListPrefix, filterString, slExport);
+    saveDirChild := 'Mods\' + targetPluginName + '\';
+    fileSaveDir := saveDir + saveDirChild;
+    if not DirectoryExists(fileSaveDir) then
+      ForceDirectories(fileSaveDir);
 
-      factionPath := 'factions\' + slRVSFactionName.Names[i] + '\';
-      factionSaveDir := saveDir + factionPath;
-      if not DirectoryExists(factionSaveDir) then
-        ForceDirectories(factionSaveDir);
+    exportFileName := RVSOperation + RVSGFileName + ' - ' + ChangeFileExt(targetPluginName, '') + fileExtension;
+    exportFilePath := fileSaveDir + exportFileName;
 
-      exportFileName := RVSOperation + RVSGFileName + ' - ' + slRVSFactionName.Names[i] + fileExtension;
-      exportFilePath := factionSaveDir + exportFileName;
+    AddMessage(Format('  [%s] %s', [targetPluginName, exportFileName]));
+    slExport.SaveToFile(exportFilePath);
 
-      AddMessage(Format('  [%s] %s', [slRVSFactionName.Names[i], exportFileName]));
-      slExport.SaveToFile(exportFilePath);
+  end
+  else begin
+    AddMessage('====================================================================================================');
+    AddMessage('Saving config files under: Data\SkyPatcher Random Visual Style Generator\SKSE\Plugins\SkyPatcher\npc\SkyPatcher Random Visual Style Generator\factions\');
+    AddMessage('====================================================================================================');
+
+    for i := 0 to slRVSFactionName.Count -1 do begin
+      if GetBoolSLValue(slRVSFactionName.ValueFromIndex[i]) then begin
+        slExport.Clear;
+        filterString := GenerateTargetFilterString(slRVSFactionName.Names[i], isModTarget);
+        AssignRVSExportString(slRVSFactionName.Names[i], formListPrefix, filterString, slExport);
+
+        saveDirChild := 'factions\' + slRVSFactionName.Names[i] + '\';
+        fileSaveDir := saveDir + saveDirChild;
+        if not DirectoryExists(fileSaveDir) then
+          ForceDirectories(fileSaveDir);
+
+        exportFileName := RVSOperation + RVSGFileName + ' - ' + slRVSFactionName.Names[i] + fileExtension;
+        exportFilePath := fileSaveDir + exportFileName;
+
+        AddMessage(Format('  [%s] %s', [slRVSFactionName.Names[i], exportFileName]));
+        slExport.SaveToFile(exportFilePath);
+      end;
     end;
   end;
+
+
 
   AddMessage('====================================================================================================');
   AddMessage('Done.');
