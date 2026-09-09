@@ -180,7 +180,9 @@ begin
   slExcludeRaces.Add('DLC2DremoraRace');
 
   if MessageDlg(
-    'Do you want to register races other than the basic races in the Form List?',
+    'Do you want to register races other than the basic races in the Form List?' + #13#10 +
+    'Yes = Basic and Non-Exclude races' + #13#10 +
+    'No = Only basic races.',
     mtConfirmation, [mbYes, mbNo], 0
     ) = mrYes then begin
     basicRacesOnly := false;
