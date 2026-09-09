@@ -260,6 +260,11 @@ begin
     Exit;
   end;
 
+  if not IsMaster(e) then begin
+    AddMessage('This record overrides another record, so it is skipped.');
+    Exit;
+  end;
+
   AddMessage('Record to operate on:' + EditorID(e));
 
   // レコードが所属するプラグインをマスター指定する
