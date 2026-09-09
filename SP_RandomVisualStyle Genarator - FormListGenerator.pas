@@ -241,7 +241,6 @@ begin
   for i := 0 to slNewFormListEditorIDs.count - 1 do
   begin
     CreateNewFormList(slNewFormListEditorIDs[i]);
-    AddMessage('Created FormList:' + EditorID(ObjectToElement(lNewFormListRecords[i])));
   end;
 end;
 
