@@ -6,7 +6,13 @@ const
   APPLYCHANCE = '100';
 
   WORLD_ENCOUNTER_KEYWORD   = 'WorldEncounter';
-  WORLD_ENCOUNTER_EDITORIDS = 'WEThief, WEAssassin, WEAdventurer';
+  WORLD_ENCOUNTER_EDITORIDS = 'WEThief, WEAssassin, WEAdventurer, WERoadCourier';
+
+  SAINTS_KEYWORD = 'Saints';
+  SEDUCERS_KEYWORD = 'Seducers';
+
+  VANILLA_FILE_NAMES = 'Skyrim.esm, Dawnguard.esm, HearthFires.esm, Dragonborn.esm';
+  SAINTS_AND_SEDUCERS_FILE_NAMES = 'ccBGSSSE025-AdvDSGS.esm';
 
 var
   // イニシャライズ処理で設定・使用する変数
@@ -27,9 +33,13 @@ begin
   if isModTarget then
     Result := 'filterByModNames=' + target
   else if SameText(target, WORLD_ENCOUNTER_KEYWORD) then
-    Result := 'filterByEditorIdContainsOr=' + WORLD_ENCOUNTER_EDITORIDS
+    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContainsOr=' + WORLD_ENCOUNTER_EDITORIDS + ':filterByEditorIdContainsExclude=Lvl'
+  else if SameText(target, SAINTS_KEYWORD) then
+    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAMES + ':filterByEditorIdContains=EncBanditSaint'
+  else if SameText(target, SEDUCERS_KEYWORD) then
+    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAMES + ':filterByEditorIdContains=EncBanditSeducer'
   else
-    Result := 'filterByEditorIdContains=Enc, ' + target;
+    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContains=Enc, ' + target;
 end;
 
 procedure AssignRVSExportString(const slRVSFactionName, prefix, filterString: string; var slExportString: TStringList);
@@ -127,6 +137,8 @@ begin
   slRVSFactionName.Add('Afflicted=false');
   slRVSFactionName.Add('Cultist=false');
   slRVSFactionName.Add('WorldEncounter=false');
+  slRVSFactionName.Add('Saints=false');
+  slRVSFactionName.Add('Seducers=false');
 
   checkBoxCaption := 'Target faction select';
 
