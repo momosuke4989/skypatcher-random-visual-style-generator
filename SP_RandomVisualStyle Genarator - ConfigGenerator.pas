@@ -11,11 +11,16 @@ const
   BANDIT_KEYWORD = 'Bandit';
   FORSWORN_KEYWORD = 'Forsworn';
   HUNTER_KEYWORD = 'Hunter';
+  DAWNGUARD_KEYWORD = 'Dawnguard';
+  VAMPIRE_KEYWORD = 'Vampire';
+  CULTIST_KEYWORD = 'Cultist';
   SAINTS_KEYWORD = 'Saints';
   SEDUCERS_KEYWORD = 'Seducers';
 
-  VANILLA_FILE_NAMES = 'Skyrim.esm, Dawnguard.esm, HearthFires.esm, Dragonborn.esm';
-  SAINTS_AND_SEDUCERS_FILE_NAMES = 'ccBGSSSE025-AdvDSGS.esm';
+  SKYRIM_FILE_NAME = 'Skyrim.esm, Update.esm';
+  DAWNGUARD_FILE_NAME = 'Dawnguard.esm';
+  DRAGONBORN_FILE_NAME = 'Dragonborn.esm';
+  SAINTS_AND_SEDUCERS_FILE_NAME = 'ccBGSSSE025-AdvDSGS.esm';
 
 var
   // イニシャライズ処理で設定・使用する変数
@@ -36,19 +41,25 @@ begin
   if isModTarget then
     Result := 'filterByModNames=' + target
   else if SameText(target, WORLD_ENCOUNTER_KEYWORD) then
-    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContainsOr=' + WORLD_ENCOUNTER_EDITORIDS + ':filterByEditorIdContainsExclude=Lvl'
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContainsOr=' + WORLD_ENCOUNTER_EDITORIDS + ':filterByEditorIdContainsExclude=Lvl'
   else if SameText(target, BANDIT_KEYWORD) then
-    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=dog, wolf';
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=dog, wolf'
   else if SameText(target, FORSWORN_KEYWORD) then
-    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=dog';
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=dog'
   else if SameText(target, HUNTER_KEYWORD) then
-    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=DLC1';
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=DLC1'
+  else if SameText(target, DAWNGUARD_KEYWORD) then
+    Result := 'filterByModNames=' + DAWNGUARD_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target
+  else if SameText(target, VAMPIRE_KEYWORD) then
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DAWNGUARD_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target
+  else if SameText(target, CULTIST_KEYWORD) then
+    Result := 'filterByModNames=' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target
   else if SameText(target, SAINTS_KEYWORD) then
-    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAMES + ':filterByEditorIdContains=EncBanditSaint'
+    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAME + ':filterByEditorIdContains=EncBanditSaint'
   else if SameText(target, SEDUCERS_KEYWORD) then
-    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAMES + ':filterByEditorIdContains=EncBanditSeducer'
+    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAME + ':filterByEditorIdContains=EncBanditSeducer'
   else
-    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContains=Enc, ' + target;
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target;
 end;
 
 procedure AssignRVSExportString(const slRVSFactionName, prefix, filterString: string; var slExportString: TStringList);
