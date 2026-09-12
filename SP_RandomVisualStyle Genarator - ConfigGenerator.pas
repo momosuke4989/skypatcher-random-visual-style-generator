@@ -8,6 +8,9 @@ const
   WORLD_ENCOUNTER_KEYWORD   = 'WorldEncounter';
   WORLD_ENCOUNTER_EDITORIDS = 'WEThief, WEAssassin, WEAdventurer, WERoadCourier';
 
+  BANDIT_KEYWORD = 'Bandit';
+  FORSWORN_KEYWORD = 'Forsworn';
+  HUNTER_KEYWORD = 'Hunter';
   SAINTS_KEYWORD = 'Saints';
   SEDUCERS_KEYWORD = 'Seducers';
 
@@ -34,6 +37,12 @@ begin
     Result := 'filterByModNames=' + target
   else if SameText(target, WORLD_ENCOUNTER_KEYWORD) then
     Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContainsOr=' + WORLD_ENCOUNTER_EDITORIDS + ':filterByEditorIdContainsExclude=Lvl'
+  else if SameText(target, BANDIT_KEYWORD) then
+    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=dog, wolf';
+  else if SameText(target, FORSWORN_KEYWORD) then
+    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=dog';
+  else if SameText(target, HUNTER_KEYWORD) then
+    Result := 'filterByModNames=' + VANILLA_FILE_NAMES + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=DLC1';
   else if SameText(target, SAINTS_KEYWORD) then
     Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAMES + ':filterByEditorIdContains=EncBanditSaint'
   else if SameText(target, SEDUCERS_KEYWORD) then
