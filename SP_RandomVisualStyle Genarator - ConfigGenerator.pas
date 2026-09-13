@@ -43,11 +43,11 @@ begin
   else if SameText(target, WORLD_ENCOUNTER_KEYWORD) then
     Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContainsOr=' + WORLD_ENCOUNTER_EDITORIDS + ':filterByEditorIdContainsExclude=Lvl'
   else if SameText(target, BANDIT_KEYWORD) then
-    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=dog, wolf'
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=Dog, Wolf'
   else if SameText(target, FORSWORN_KEYWORD) then
-    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=dog'
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=Dog'
   else if SameText(target, HUNTER_KEYWORD) then
-    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=DLC1'
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=DLC1, Chaurus'
   else if SameText(target, DAWNGUARD_KEYWORD) then
     Result := 'filterByModNames=' + DAWNGUARD_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target
   else if SameText(target, VAMPIRE_KEYWORD) then
