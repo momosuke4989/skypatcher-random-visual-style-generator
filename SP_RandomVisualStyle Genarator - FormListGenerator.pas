@@ -1,4 +1,7 @@
 unit userscript;
+
+uses 'xEdit_mmskCommonLibrary\xEdit_mmskCommonLibrary';
+
 const
   DRAUGRWEAPONS = $00000D14; // FomrID Listコピー参照用
   EDITORIDSUFFIX = '_RVSG';
@@ -8,9 +11,9 @@ const
 
 var
   pluginName, formListPrefix: string;
-  basicRacesOnly: boolean;
+  createNewPlugin, tergetPluginInit: boolean;
 
-  newPlugin: IwbFile;
+  newPlugin, tergetPlugin: IwbFile;
   baseFormList: IwbMainRecord;
   slNewFormListEditorIDs, slBasicRaces, slExcludeRaces: TStringList;
   lNewFormListRecords: TList;
@@ -27,16 +30,16 @@ begin
     AddMessage('Added FormList:' + EditorID(formListRecord));
 end;
 
-function CreateNewFormList(NewFormListEditorID: string): integer;
+function CreateNewFormList(newFormListEditorID: string; tergetPlugin: IwbFile): integer;
 var
   lastIndex: integer;
     newFormList, entries, formIDs: IwbElement;
 
 begin
-  newFormList := wbCopyElementToFile(baseFormList, newPlugin, True, True);
+  newFormList := wbCopyElementToFile(baseFormList, tergetPlugin, True, True);
   if not Assigned(newFormList) then
   begin
-    AddMessage('Failed to create FormList:' + NewFormListEditorID);
+    AddMessage('Failed to create FormList:' + newFormListEditorID);
     Continue;
   end;
 
@@ -47,7 +50,7 @@ begin
     AddMessage('The FormList contents have been cleared.');
   end;
   // FormListのEditor IDを設定
-  SetElementEditValues(newFormList, 'EDID', NewFormListEditorID);
+  SetElementEditValues(newFormList, 'EDID', newFormListEditorID);
   // FormIDsエレメントを再設定
   entries := Add(newFormList, 'FormIDs', True);
   // 自動追加されるFormIDs #0を削除
@@ -78,20 +81,13 @@ function ShouldExcludeNPC(e: IInterface): Boolean;
 var
   raceRecord: IInterface;
   raceString: string;
-  NPCFlag, templateFlag: cardinal;
+  npcFlag: cardinal;
 begin
   Result := false;
 
   // 種族の取得
   raceRecord := LinksTo(ElementByPath(e, 'RNAM'));
   raceString := EditorID(raceRecord);
-
-  // 基本種族以外は処理をスキップ
-  if basicRacesOnly and slBasicRaces.IndexOf(raceString) = -1 then begin
-    AddMessage('Skip non-basic races');
-    Result := true;
-    Exit;
-  end;
 
 
   // 除外種族リストに含まれる種族かどうかを判定
@@ -122,9 +118,9 @@ begin
     Exit;
   end;
 
-  NPCFlag := GetElementNativeValues(e, 'ACBS\Flags');
+  npcFlag := GetElementNativeValues(e, 'ACBS\Flags');
   // CharGen Presetはスキップ
-  if (NPCFlag and $4) = 4 then begin
+  if (npcFlag and $4) = 4 then begin
     AddMessage('This record is a CharGen Prest.');
     Result := true;
     Exit;
@@ -137,9 +133,8 @@ begin
     Exit;
   end;
 
-  templateFlag := GetElementNativeValues(ElementBySignature(e, 'ACBS'), 'Template Flags');
   // UseTraitsテンプレートフラグを持つNPCはスキップ
-  if (templateFlag and $01) <> 0 then begin
+  if IsNPCUsingTraits(e) then begin
     AddMessage('This record uses a template and has the Use Traits flag.');
     Result := true;
     Exit;
@@ -149,11 +144,13 @@ end;
 
 function Initialize: integer;
 var
-    i: integer;
     newFormList, entries, formIDs: IwbElement;
     tempRace: string;
 begin
   Result := 0;
+  createNewPlugin       := false;
+  tergetPluginInit  := false;
+
   slNewFormListEditorIDs := TStringList.Create;
   slBasicRaces := TStringList.Create;
   slExcludeRaces := TStringList.Create;
@@ -180,29 +177,43 @@ begin
   slExcludeRaces.Add('DLC2DremoraRace');
 
   if MessageDlg(
-    'Do you want to register races other than the basic races in the Form List?' + #13#10 +
-    'Yes = Basic and Non-Exclude races' + #13#10 +
-    'No = Only basic races.',
-    mtConfirmation, [mbYes, mbNo], 0
-    ) = mrYes then begin
-    basicRacesOnly := false;
-    AddMessage('Races other than the basic races will be registered in the Form List.');
-  end
-  else begin
-    basicRacesOnly := true;
-    AddMessage('Only basic races will be registered in the Form List.');
+    'Do you want to create a new plugin file for Form List registration?' + #13#10 +
+    'Yes = Form Lists are registered in a new esp file.' + #13#10 +
+    'No = Form Lists are registered in the file containing NPC records.', mtConfirmation, [mbYes, mbNo], 0
+    ) = mrYes then
+    createNewPlugin := true;
+
+  if createNewPlugin then begin
+    // ユーザーにファイル名を入力してもらう
+    if not AskInputDialog('New Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', pluginName) then
+    begin
+      AddMessage('Plugin name entry was canceled.');
+      Result := 1;
+      Exit;
+    end;
+
+    // ファイル名の拡張子を確認し、必要に応じて追加
+    if LowerCase(ExtractFileExt(pluginName)) <> '.esp' then
+      pluginName := pluginName + '.esp';
+
+    // 新しいプラグインを作成し、ESL フラグを設定
+    newPlugin := AddNewFileName(pluginName, True);
+    if not Assigned(newPlugin) then
+    begin
+      AddMessage('Failed to create plugin.');
+      Result := 1;
+      Exit;
+    end;
+
+    AddMasterIfMissing(newPlugin, 'Skyrim.esm');
+    AddMessage('A new plugin has been created:' + pluginName);
   end;
 
-  // ユーザーにファイル名を入力してもらう
-  if not InputQuery('New Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', pluginName) then
-  begin
-    AddMessage('Plugin name entry was canceled.');
-    Result := 1;
-    Exit;
-  end;
-
-  // ユーザーにForm Listのプレフィックスを入力してもらう
-  if not InputQuery('Set Form List Prefix', 'Enter the Form List Prefix. Underscore(_) will be added.', formListPrefix) then
+// ユーザーにForm Listのプレフィックスを入力してもらう
+  if not AskEditorIDPrefix('Set Form List Prefix',
+    'Enter the prefix. Only letters (a-z, A-Z) and digits (0-9) are allowed.' + #13#10 + 'Underscore (_) will be added to the prefix you enter:',
+    false,
+    formListPrefix) then
   begin
     AddMessage('Prefix entry was canceled.');
     Result := 1;
@@ -211,23 +222,6 @@ begin
 
   // プレフィックスにアンダースコアを追加
   formListPrefix := formListPrefix + '_';
-
-  // ファイル名の拡張子を確認し、必要に応じて追加
-  if LowerCase(ExtractFileExt(pluginName)) <> '.esp' then
-    pluginName := pluginName + '.esp';
-
-  // 新しいプラグインを作成し、ESL フラグを設定
-  newPlugin := AddNewFileName(pluginName, True);
-  if not Assigned(newPlugin) then
-  begin
-    AddMessage('Failed to create plugin.');
-    Result := 1;
-    Exit;
-  end;
-
-  AddMessage('A new plugin has been created:' + pluginName);
-  AddMasterIfMissing(newPlugin, 'Skyrim.esm');
-
   AddMessage('Form List Prefix:' + formListPrefix);
 
   // レコードを直接追加できないので、バニラのFormListレコードをコピー
@@ -239,21 +233,29 @@ begin
   slNewFormListEditorIDs.Add(formListPrefix + 'Male' + EDITORIDSUFFIX);
   slNewFormListEditorIDs.Add(formListPrefix + 'Female' + EDITORIDSUFFIX);
 
-  // 各 Editor ID に対して FormList を作成
-  for i := 0 to slNewFormListEditorIDs.count - 1 do
-  begin
-    CreateNewFormList(slNewFormListEditorIDs[i]);
-  end;
 end;
 
 function Process(e: IInterface): integer;
 var
   raceRecord: IInterface;
-  i, templateFlag, NPCFlag, indxAll, indxGender, indxRaceGender: cardinal;
+  i, templateFlag, npcFlag, indxAll, indxGender, indxRaceGender: cardinal;
   NPCGender, raceString: string;
   raceFaceGenHeadFlag: boolean;
 begin
   Result := 0;
+
+  if not tergetPluginInit then begin
+    if createNewPlugin then
+        tergetPlugin := newPlugin
+    else
+        tergetPlugin := Getfile(e);
+    // 各 Editor ID に対して FormList を作成
+    for i := 0 to slNewFormListEditorIDs.count - 1 do
+    begin
+      CreateNewFormList(slNewFormListEditorIDs[i], tergetPlugin);
+    end;
+    tergetPluginInit := true;
+  end;
 
   // NPCレコード以外のレコードはスキップ
   if Signature(e) <> 'NPC_' then begin
@@ -277,14 +279,14 @@ begin
   end;
 
   // NPCレコードフラグを取得
-  NPCFlag := GetElementNativeValues(e, 'ACBS\Flags');
+  npcFlag := GetElementNativeValues(e, 'ACBS\Flags');
 
-  if UNIQUE_ONLY and ((NPCFlag and $20) = 0) then begin
+  if UNIQUE_ONLY and ((npcFlag and $20) = 0) then begin
     AddMessage('This record is not unique, so it is excluded from the Form List.');
     Exit;
   end;
 
-  if NON_UNIQUE_ONLY and ((NPCFlag and $20) <> 0) then begin
+  if NON_UNIQUE_ONLY and ((npcFlag and $20) <> 0) then begin
     AddMessage('This record is unique, so it is excluded from the Form List.');
     Exit;
   end;
@@ -295,10 +297,10 @@ begin
   raceString := EditorID(raceRecord);
 
   // 性別の判定
-  if (NPCFlag and $1) = 0 then
-    NPCGender := 'Male'
+  if IsNPCFemale(e) then
+    NPCGender := 'Female'
   else
-    NPCGender := 'Female';
+    NPCGender := 'Male';
 
   // EditorIDを基にFormListを取得（ lNewFormListRecords を先に対応づけ済み）
   // 共通: "All" は全員に割り当て
@@ -314,7 +316,7 @@ begin
   // FormListが存在しない場合は新規作成してから割り当て
   if indxRaceGender = -1 then
   begin
-    indxRaceGender := CreateNewFormList(formListPrefix + raceString + NPCGender + EDITORIDSUFFIX);
+    indxRaceGender := CreateNewFormList(formListPrefix + raceString + NPCGender + EDITORIDSUFFIX, tergetPlugin);
     slNewFormListEditorIDs.Add(formListPrefix + raceString + NPCGender + EDITORIDSUFFIX);
   end;
   AssignNPCToFormList(e, ObjectToElement(lNewFormListRecords[indxRaceGender]));

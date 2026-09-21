@@ -1,6 +1,6 @@
 unit userscripts;
 
-uses 'NPC Replacer Converter - Shared\NPCRC_CommonUtils';
+uses 'xEdit_mmskCommonLibrary\xEdit_mmskCommonLibrary';
 
 const
   APPLYCHANCE = '100';
@@ -184,8 +184,8 @@ begin
 
   if MessageDlg(
     'What should this filter target?' + #13#10 +
-    'Yes = A specific mod (.esp/.esm/.esl)' + #13#10 +
-    'No = A faction (Editor ID keyword)',
+    'Yes = Specific Mod' + #13#10 +
+    'No = Vanilla Faction',
     mtConfirmation, [mbYes, mbNo], 0
     ) = mrYes then
   isModTarget := true;
@@ -211,7 +211,7 @@ begin
     end;
   end
   else begin
-    if not InputQuery('Target Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', targetPluginName) then
+    if not AskInputDialog('Target Plugin name entry', 'Enter the Form List Plugin name (e.g. MyPlugin.esp)', targetPluginName) then
     begin
       AddMessage('Target plugin name entry was canceled.');
       Result := 1;
