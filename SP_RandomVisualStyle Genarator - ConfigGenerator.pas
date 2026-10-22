@@ -39,27 +39,27 @@ var
 function GenerateTargetFilterString(const target: string; isModTarget: boolean): string;
 begin
   if isModTarget then
-    Result := 'filterByModNames=' + target
+    Result := 'filterByModNames=' + target + ':filterByTemplateFlagExclude=traits'
   else if SameText(target, WORLD_ENCOUNTER_KEYWORD) then
-    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContainsOr=' + WORLD_ENCOUNTER_EDITORIDS + ':filterByEditorIdContainsExclude=Lvl'
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContainsOr=' + WORLD_ENCOUNTER_EDITORIDS + ':filterByEditorIdContainsExclude=Template, Lvl' + ':filterByTemplateFlagExclude=traits'
   else if SameText(target, BANDIT_KEYWORD) then
-    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=Dog, Wolf'
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc' + target + ':filterByEditorIdContainsExclude=Template' + ':filterByTemplateFlagExclude=traits'
   else if SameText(target, FORSWORN_KEYWORD) then
-    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=Dog'
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContains=Enc' + target + ':filterByEditorIdContainsExclude=Template' + ':filterByTemplateFlagExclude=traits'
   else if SameText(target, HUNTER_KEYWORD) then
-    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target + ':filterByEditorIdContainsExclude=DLC1, Chaurus'
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc' + target + ':filterByEditorIdContainsExclude=Template, DLC1' + ':filterByTemplateFlagExclude=traits'
   else if SameText(target, DAWNGUARD_KEYWORD) then
-    Result := 'filterByModNames=' + DAWNGUARD_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target
+    Result := 'filterByModNames=' + DAWNGUARD_FILE_NAME + ':filterByEditorIdContains=Enc' + target + ':filterByEditorIdContainsExclude=Template' + ':filterByTemplateFlagExclude=traits'
   else if SameText(target, VAMPIRE_KEYWORD) then
-    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DAWNGUARD_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ', ' + DAWNGUARD_FILE_NAME + ':filterByEditorIdContains=Enc' + target + ':filterByEditorIdContainsExclude=Template' + ':filterByTemplateFlagExclude=traits'
   else if SameText(target, CULTIST_KEYWORD) then
-    Result := 'filterByModNames=' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target
+    Result := 'filterByModNames=' + DRAGONBORN_FILE_NAME + ':filterByEditorIdContains=Enc' + target + ':filterByEditorIdContainsExclude=Template' + ':filterByTemplateFlagExclude=traits'
   else if SameText(target, SAINTS_KEYWORD) then
-    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAME + ':filterByEditorIdContains=EncBanditSaint'
+    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAME + ':filterByEditorIdContains=EncBanditSaint' + ':filterByEditorIdContainsExclude=Template' + ':filterByTemplateFlagExclude=traits'
   else if SameText(target, SEDUCERS_KEYWORD) then
-    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAME + ':filterByEditorIdContains=EncBanditSeducer'
+    Result := 'filterByModNames=' + SAINTS_AND_SEDUCERS_FILE_NAME + ':filterByEditorIdContains=EncBanditSeducer' + ':filterByEditorIdContainsExclude=Template' + ':filterByTemplateFlagExclude=traits'
   else
-    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContains=Enc, ' + target;
+    Result := 'filterByModNames=' + SKYRIM_FILE_NAME + ':filterByEditorIdContains=Enc' + target  + ':filterByTemplateFlagExclude=traits';
 end;
 
 procedure AssignRVSExportString(const slRVSFactionName, prefix, filterString: string; var slExportString: TStringList);
